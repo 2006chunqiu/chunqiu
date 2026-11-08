@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-season="spring" data-view="hero">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>春秋 · 一季一会</title>
+<meta name="description" content="春秋 —— 春是春，秋是秋。下滑，春以流水入，秋以落叶入。" />
+<meta name="theme-color" content="#f6f4ef" />
+<meta name="color-scheme" content="light dark" />
+<link rel="preload" as="image" href="assets/spring-hero.jpg" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231b1b1d'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%23f6f4ef'/%3E%3C/svg%3E" />
+
+<style>
+/* =========================================================================
+   春秋 · 一季一会
+   首页是一屏季节封面（春 / 秋），角落里是当前季节的一个字。
+   下滑：春——流水漫过，进入「春日实验」；秋——枫叶落下，进入「秋日作品」。
+   ========================================================================= */
+
+@property --ink       { syntax: "<color>"; inherits: true; initial-value: #f4ecdf; }
+@property --ink-2     { syntax: "<color>"; inherits: true; initial-value: rgba(244,236,223,.62); }
+@property --ink-3     { syntax: "<color>"; inherits: true; initial-value: rgba(244,236,223,.36); }
+@property --line      { syntax: "<color>"; inherits: true; initial-value: rgba(244,236,223,.14); }
+@property --line-strong { syntax: "<color>"; inherits: true; initial-value: rgba(244,236,223,.32); }
+@property --accent    { syntax: "<color>"; inherits: true; initial-value: #d48a44; }
+@property --accent-2  { syntax: "<color>"; inherits: true; initial-value: rgba(212,138,68,.2); }
+@property --card      { syntax: "<color>"; inherits: true; initial-value: rgba(255,255,255,.07); }
+@property --bg        { syntax: "<color>"; inherits: true; initial-value: #f4f1e8; }
+@property --bar       { syntax: "<color>"; inherits: true; initial-value: rgba(244,241,232,.82); }
+
+:root {
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --ease-soft: cubic-bezier(.4, 0, .2, 1);
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+  --brush: "STXingkai", "FZSTK", "STKaiti", "KaiTi", "Kaiti SC",
+           "BiauKai", "Songti SC", "STSong", "SimSun", serif;
+  --gutter: clamp(22px, 4.4vw, 64px);
+}
+
+html[data-season="spring"] {
+  --ink: #16181a;
+  --ink-2: rgba(22, 24, 26, .62);
+  --ink-3: rgba(22, 24, 26, .4);
+  --line: rgba(22, 24, 26, .12);
+  --line-strong: rgba(22, 24, 26, .3);
+  --accent: #5f7f4c;
+  --accent-2: rgba(95, 127, 76, .2);
+  --card: rgba(255, 255, 255, .42);
+  --bg: #f4f1e8;
+  --bar: rgba(244, 241, 232, .82);
+  --hud: rgba(246, 244, 239, .62);
+  color-scheme: light;
+}
+html[data-season="autumn"] {
+  --ink: #f4ecdf;
+  --ink-2: rgba(244, 236, 223, .62);
+  --ink-3: rgba(244, 236, 223, .36);
+  --line: rgba(244, 236, 223, .14);
+  --line-strong: rgba(244, 236, 223, .32);
+  --accent: #d48a44;
+  --accent-2: rgba(212, 138, 68, .2);
+  --card: rgba(255, 255, 255, .07);
+  --bg: #0b0907;
+  --bar: rgba(11, 9, 7, .82);
+  --hud: rgba(8, 6, 4, .56);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #070605;
+}
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: color 1.1s var(--ease-soft);
+}
+html {
+  transition:
+    --ink 1.1s var(--ease-soft), --ink-2 1.1s var(--ease-soft), --ink-3 1.1s var(--ease-soft),
+    --line 1.1s var(--ease-soft), --line-strong 1.1s var(--ease-soft),
+    --accent 1.1s var(--ease-soft), --accent-2 1.1s var(--ease-soft),
+    --card 1.1s var(--ease-soft), --bg 1.1s var(--ease-soft), --bar 1.1s var(--ease-soft);
+}
+img { display: block; max-width: 100%; }
+button { font-family: inherit; }
+::selection { background: var(--accent); color: #fff; }
+
+/* =========================================================================
+   首页：季节封面
+   ========================================================================= */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  isolation: isolate;
+  cursor: pointer;
+  transition: opacity .7s var(--ease-soft), visibility 0s;
+}
+body[data-view="content"] .stage {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .7s var(--ease-soft), visibility 0s .7s;
+}
+
+/* --- 背景：两张照片互为底片 -------------------------------------------- */
+.media { position: absolute; inset: 0; z-index: 0; }
+.layer {
+  position: absolute; inset: -4%;
+  opacity: 0; transform: scale(1.08);
+  transition: opacity 1.55s var(--ease-soft), transform 2.6s var(--ease);
+  will-change: opacity, transform;
+}
+.layer img {
+  width: 100%; height: 100%; object-fit: cover;
+  animation: kenburns 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+html[data-season="spring"] .layer.spring,
+html[data-season="autumn"] .layer.autumn { opacity: 1; transform: scale(1); }
+.layer.autumn img { filter: brightness(1.12) saturate(1.08); }
+
+.tone { position: absolute; inset: 0; opacity: 0; pointer-events: none;
+  transition: opacity 1.5s var(--ease-soft); mix-blend-mode: soft-light; }
+.tone.spring { background: linear-gradient(180deg, rgba(255,246,222,.2), rgba(108,150,86,.1) 58%, rgba(10,26,10,.05)); }
+.tone.autumn { background: linear-gradient(180deg, rgba(255,168,92,.18), rgba(104,32,10,.2) 58%, rgba(6,2,1,.28)); }
+html[data-season="spring"] .tone.spring,
+html[data-season="autumn"] .tone.autumn { opacity: 1; }
+
+.vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 95% at 50% 45%, rgba(0,0,0,0) 52%, rgba(0,0,0,.3) 100%),
+    linear-gradient(180deg, rgba(0,0,0,.16), rgba(0,0,0,0) 20%);
+}
+.grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: .38; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+.particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  opacity: 0; transition: opacity 1.4s var(--ease-soft); }
+html[data-season="spring"] .particles.spring,
+html[data-season="autumn"] .particles.autumn { opacity: 1; }
+.particles span { position: absolute; top: -12%; will-change: transform; animation: fall linear infinite; }
+.particles span i { display: block; width: 10px; height: 10px;
+  background-size: contain; background-repeat: no-repeat;
+  animation: drift ease-in-out infinite alternate; will-change: transform; }
+.particles.spring span i {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 3c7 6 11 15 8 24-2 6-9 9-14 6S6 22 10 14c3-5 6-8 10-11z' fill='%23fbf7ef' fill-opacity='.85'/%3E%3C/svg%3E");
+}
+.particles.autumn span i {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 30 L16 21 L8 26 L10 18 L2 18 L10 13 L4 7 L13 9 L14 1 L18 9 L27 6 L21 13 L29 17 L21 18 L23 26 L16 21 Z' fill='%23c2642f' fill-opacity='.85'/%3E%3C/svg%3E");
+}
+
+/* --- 角落里的那一个字：行楷 + 照片反相镂空 ------------------------------ */
+.glyph {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: fadeIn 1.2s var(--ease-soft) .5s both;
+}
+.glyph span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding-right: var(--gutter);
+  padding-bottom: clamp(20px, 3.6vh, 42px);
+  font-family: var(--brush);
+  font-size: clamp(220px, 34vw, 540px);
+  line-height: .78;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, .16);
+  filter: grayscale(1) invert(1) contrast(.94) brightness(.97);
+  opacity: 0;
+  transition: opacity 1s var(--ease-soft);
+}
+.glyph .g-s { background-image: url("assets/spring-hero.jpg"); }
+.glyph .g-a { background-image: url("assets/autumn-hero.jpg"); }
+html[data-season="spring"] .glyph .g-s { opacity: .86; }
+html[data-season="autumn"] .glyph .g-a { opacity: .86; }
+
+/* --- 界面：坐标、季名、切换、下滑提示 ----------------------------------- */
+.ui { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+
+.topbar {
+  position: absolute; inset: 0 0 auto 0;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: clamp(18px, 3vh, 30px) var(--gutter);
+  animation: fadeDown 1s var(--ease) .12s both;
+}
+.topbar::before {
+  content: "";
+  position: absolute; left: 0; top: 0;
+  width: min(620px, 72vw); height: 230px;
+  background: radial-gradient(120% 100% at 0% 0%, var(--hud), rgba(0, 0, 0, 0) 72%);
+  pointer-events: none;
+}
+.left { position: relative; z-index: 1; display: flex; flex-direction: column; gap: clamp(18px, 3.2vh, 32px); }
+
+.mark {
+  display: inline-flex; align-items: center; gap: 11px;
+  font-size: 11px; letter-spacing: .26em; text-indent: .26em;
+  color: var(--ink);
+}
+.mark-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-2);
+  transition: background-color .6s var(--ease-soft), box-shadow .6s var(--ease-soft);
+}
+.mark-year { color: var(--ink-2); letter-spacing: .22em; }
+
+.cover-role {
+  margin: -8px 0 0;
+  font-size: 12px; letter-spacing: .14em;
+  color: var(--ink); opacity: .85;
+  animation: fadeUp 1.1s var(--ease) .5s both;
+}
+
+.caption {
+  position: relative;
+  width: min(300px, 68vw);
+  height: 82px;
+  animation: fadeUp 1.1s var(--ease) .34s both;
+}
+.cap {
+  position: absolute; left: 0; top: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  opacity: 0;
+  transition: opacity .9s var(--ease-soft);
+}
+html[data-season="spring"] .cap-s,
+html[data-season="autumn"] .cap-a { opacity: 1; }
+.cap-en {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 10px; letter-spacing: .32em; text-indent: .32em;
+  color: var(--ink); opacity: .7;
+}
+.cap-en::before { content: ""; width: 26px; height: 1px; background: currentColor; opacity: .5; }
+.cap-cn {
+  font-family: var(--brush);
+  font-size: clamp(24px, 2.6vw, 34px);
+  letter-spacing: .16em; text-indent: .16em;
+  color: var(--ink);
+}
+
+.toggle {
+  position: relative; z-index: 1;
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 10.5px; letter-spacing: .22em; text-indent: .22em;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  transition: color .45s var(--ease-soft), border-color .45s var(--ease-soft),
+              background-color .45s var(--ease-soft), transform .45s var(--ease);
+}
+.toggle:hover { color: var(--ink); transform: translateY(-1px); }
+.toggle:active { transform: translateY(0) scale(.98); }
+.toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dots { display: inline-flex; gap: 7px; }
+.dots i {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; opacity: .26;
+  transition: opacity .5s var(--ease-soft), transform .5s var(--ease-soft),
+              background-color .5s var(--ease-soft);
+}
+html[data-season="spring"] .dot-s,
+html[data-season="autumn"] .dot-a { opacity: 1; transform: scale(1.4); background: var(--accent); }
+
+/* 下滑提示 */
+.scroll-cue {
+  position: absolute; left: 50%; bottom: clamp(22px, 3.6vh, 40px);
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 11px;
+  color: var(--ink-2);
+  animation: fadeIn 1.2s var(--ease) 1s both;
+}
+.cue-texts { position: relative; height: 14px; width: 200px; }
+.cue-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  white-space: nowrap;
+  font-size: 10px; letter-spacing: .26em; text-indent: .26em;
+  color: var(--ink);
+  opacity: 0; transition: opacity .9s var(--ease-soft);
+}
+html[data-season="spring"] .cue-s,
+html[data-season="autumn"] .cue-a { opacity: 1; }
+.cue-line { position: relative; width: 1px; height: 26px; background: var(--ink-2); opacity: .45; overflow: hidden; }
+.cue-line::after {
+  content: ""; position: absolute; left: 0; top: -100%;
+  width: 1px; height: 100%; background: var(--ink);
+  animation: cueDrop 2.2s var(--ease-soft) infinite;
+}
+
+/* =========================================================================
+   内容页
+   ========================================================================= */
+.view {
+  position: fixed; inset: 0; z-index: 10;
+  overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+  color: var(--ink);
+  opacity: 0; visibility: hidden;
+  transition: opacity .6s var(--ease-soft), visibility 0s .6s;
+  scrollbar-width: thin;
+}
+.view.active { opacity: 1; visibility: visible; transition: opacity .6s var(--ease-soft), visibility 0s; }
+
+/* 内容页各自锁定调性：春始终浅、秋始终深，切换页面时不串色 */
+.view-spring {
+  --ink: #16181a;
+  --ink-2: rgba(22, 24, 26, .62);
+  --ink-3: rgba(22, 24, 26, .4);
+  --line: rgba(22, 24, 26, .12);
+  --line-strong: rgba(22, 24, 26, .3);
+  --accent: #5f7f4c;
+  --accent-2: rgba(95, 127, 76, .2);
+  --card: rgba(255, 255, 255, .42);
+  --bg: #f4f1e8;
+  --bar: rgba(244, 241, 232, .82);
+}
+.view-autumn {
+  --ink: #f4ecdf;
+  --ink-2: rgba(244, 236, 223, .62);
+  --ink-3: rgba(244, 236, 223, .36);
+  --line: rgba(244, 236, 223, .14);
+  --line-strong: rgba(244, 236, 223, .32);
+  --accent: #d48a44;
+  --accent-2: rgba(212, 138, 68, .2);
+  --card: rgba(255, 255, 255, .07);
+  --bg: #0b0907;
+  --bar: rgba(11, 9, 7, .82);
+}
+
+/* 内容页底片：整页固定的照片 + 随季节的柔和纱幕，保证文字可读 */
+.view-bg {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 50%;
+}
+.view-bg::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--view-scrim);
+}
+.view-spring .view-bg {
+  background-image: url("assets/spring-page.jpg");
+  background-position: 50% 38%;
+  filter: blur(1.5px) saturate(.94) brightness(1.02);
+  --view-scrim: linear-gradient(180deg,
+    rgba(244, 241, 232, .5) 0%,
+    rgba(244, 241, 232, .82) 26%,
+    rgba(244, 241, 232, .93) 58%,
+    rgba(244, 241, 232, .96) 100%);
+}
+.view-autumn .view-bg {
+  background-image: url("assets/autumn-page.jpg");
+  background-position: 50% 44%;
+  filter: blur(1.5px) saturate(.98) brightness(.98);
+  --view-scrim: linear-gradient(180deg,
+    rgba(10, 8, 6, .5) 0%,
+    rgba(10, 8, 6, .82) 26%,
+    rgba(10, 8, 6, .91) 58%,
+    rgba(10, 8, 6, .94) 100%);
+}
+
+.view-bar {
+  position: sticky; top: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: clamp(14px, 2.4vh, 20px) var(--gutter);
+  background: var(--bar);
+  border-bottom: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+}
+.back {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--card); color: var(--ink-2);
+  font-size: 10.5px; letter-spacing: .2em; text-indent: .2em;
+  cursor: pointer;
+  transition: color .4s var(--ease-soft), transform .4s var(--ease), border-color .4s;
+}
+.back:hover { color: var(--ink); transform: translateX(-2px); border-color: var(--ink-3); }
+.back svg { transition: transform .4s var(--ease); }
+.back:hover svg { transform: translateX(-3px); }
+.view-mark { font-size: 10.5px; letter-spacing: .3em; text-indent: .3em; color: var(--ink-3); }
+
+.view-body {
+  position: relative; z-index: 1;
+  max-width: 1120px; margin: 0 auto;
+  padding: clamp(36px, 7vh, 90px) var(--gutter) clamp(70px, 10vh, 120px);
+}
+
+.view-head { padding-bottom: clamp(30px, 6vh, 64px); }
+.eyebrow { margin: 0 0 18px; font-size: 10.5px; letter-spacing: .34em; text-indent: .34em; color: var(--ink-2); }
+.view-head h1 {
+  margin: 0;
+  font-family: var(--brush); font-weight: 400;
+  font-size: clamp(56px, 9vw, 132px); line-height: 1;
+  letter-spacing: .02em; color: var(--ink);
+}
+.lede { max-width: 42ch; margin: 22px 0 0; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.9; color: var(--ink-2); }
+
+/* --- 春日实验：卡片网格 ------------------------------------------------- */
+.exp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(14px, 1.6vw, 20px); }
+.exp {
+  position: relative;
+  padding: clamp(22px, 2.4vw, 30px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  transition: transform .55s var(--ease), border-color .45s var(--ease-soft),
+              background-color .45s var(--ease-soft);
+}
+.exp:hover { transform: translateY(-4px); border-color: var(--line-strong); }
+.exp-top {
+  display: flex; justify-content: space-between; gap: 12px;
+  margin-bottom: clamp(26px, 4vw, 48px);
+  font-size: 10.5px; letter-spacing: .2em; color: var(--ink-3);
+}
+.exp-tag { color: var(--accent); letter-spacing: .14em; }
+.exp h2 { margin: 0 0 10px; font-size: clamp(20px, 1.9vw, 26px); font-weight: 500; letter-spacing: .02em; }
+.exp p { margin: 0; font-size: 14px; line-height: 1.9; color: var(--ink-2); }
+
+/* --- 秋日作品：编辑式列表 ---------------------------------------------- */
+.work-list { display: flex; flex-direction: column; }
+.work-row {
+  display: grid; grid-template-columns: 46px minmax(0, 1.05fr) minmax(0, 1.45fr);
+  gap: clamp(16px, 3vw, 40px); align-items: start;
+  padding: clamp(22px, 3.2vw, 32px) 0;
+  border-top: 1px solid var(--line);
+}
+.work-row:last-child { border-bottom: 1px solid var(--line); }
+.w-no { font-size: 11px; letter-spacing: .2em; color: var(--accent); padding-top: 4px; }
+.w-main h2 {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 2.4vw, 34px); font-weight: 400; letter-spacing: .01em;
+  transition: color .4s var(--ease-soft);
+}
+.work-row:hover .w-main h2 { color: var(--accent); }
+.w-main p { margin: 0; font-size: 11px; letter-spacing: .18em; color: var(--ink-3); }
+.w-desc { margin: 0; font-size: 14px; line-height: 1.9; color: var(--ink-2); }
+
+.view-foot {
+  display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  margin-top: clamp(50px, 8vh, 90px); padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 11px; letter-spacing: .16em; color: var(--ink-3);
+}
+.view-foot a {
+  color: var(--ink-2); text-decoration: none;
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 2px;
+  transition: color .4s var(--ease-soft), border-color .4s;
+}
+.view-foot a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* --- 内容页：个人档案与分节 ------------------------------------------- */
+.view { scroll-behavior: smooth; }
+
+.block {
+  margin-top: clamp(32px, 5vh, 58px);
+  padding-top: clamp(24px, 4vh, 38px);
+  border-top: 1px solid var(--line);
+}
+.block[id] { scroll-margin-top: 84px; }
+.block-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  margin-bottom: clamp(16px, 2.6vh, 26px);
+}
+.block-head h2 { margin: 0; font-size: clamp(19px, 2vw, 26px); font-weight: 500; letter-spacing: .02em; }
+.block-en { font-size: 12px; color: var(--ink-3); letter-spacing: .06em; }
+
+.profile {
+  margin-top: clamp(24px, 4vh, 42px);
+  padding-top: clamp(18px, 3vh, 28px);
+  border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 18px clamp(24px, 4vw, 56px);
+}
+.profile-main { display: flex; flex-direction: column; gap: 7px; }
+.profile-name {
+  margin: 0; display: flex; align-items: baseline; gap: 10px;
+  font-size: clamp(21px, 2.1vw, 27px); font-weight: 500; letter-spacing: .04em;
+}
+.profile-name span { font-size: 12px; color: var(--ink-3); letter-spacing: .1em; font-weight: 400; }
+.profile-role { margin: 0; font-size: 13px; color: var(--ink-2); letter-spacing: .06em; }
+.profile-line { margin: 0; font-size: 15px; line-height: 1.85; color: var(--ink-2); max-width: 40ch; }
+.stats {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 24px);
+  margin: 6px 0 0; padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.stats div { display: flex; flex-direction: column; gap: 3px; }
+.stats dt { font-size: clamp(24px, 2.5vw, 31px); font-weight: 300; line-height: 1.1; color: var(--ink); letter-spacing: .01em; }
+.stats dd { margin: 0; font-size: 12px; color: var(--ink-3); letter-spacing: .04em; }
+
+.about { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .85fr); gap: clamp(22px, 4vw, 56px); }
+.about-text { margin: 0; font-size: 15.5px; line-height: 1.95; color: var(--ink-2); max-width: 46ch; }
+.facts { margin: 0; display: flex; flex-direction: column; }
+.facts div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-top: 1px solid var(--line); }
+.facts dt { font-size: 12px; color: var(--ink-3); letter-spacing: .06em; }
+.facts dd { margin: 0; font-size: 13px; color: var(--ink-2); text-align: right; }
+
+.skills { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 3vw, 40px); }
+.skill-col h3 { margin: 0 0 8px; font-size: 13.5px; font-weight: 500; color: var(--ink); letter-spacing: .06em; }
+.skill-col ul { list-style: none; margin: 0; padding: 0; }
+.skill-col li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-2); }
+.skill-col li em { font-style: normal; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: clamp(14px, 3vw, 32px); padding: 15px 0; border-top: 1px solid var(--line); }
+.timeline time { font-size: 12.5px; color: var(--accent); letter-spacing: .03em; padding-top: 2px; }
+.timeline h3 { margin: 0 0 5px; font-size: 15.5px; font-weight: 500; }
+.timeline p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+.hobbies { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(24px, 4vw, 56px); }
+.hobbies > div { padding: 14px 0; border-top: 1px solid var(--line); }
+.hobbies h3 { margin: 0 0 5px; font-size: 15px; font-weight: 500; }
+.hobbies p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+.exp-list { list-style: none; margin: 0; padding: 0; }
+.exp-list li { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr); gap: clamp(14px, 3vw, 40px); padding: 13px 0; border-top: 1px solid var(--line); align-items: baseline; }
+.exp-list .exp-title { display: flex; align-items: baseline; gap: 10px; }
+.exp-list h3 { margin: 0; font-size: 15.5px; font-weight: 500; }
+.exp-list .exp-tag { font-size: 11px; color: var(--ink-3); }
+.exp-list p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+.caps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(24px, 4vw, 56px); }
+.caps > div { padding: 15px 0; border-top: 1px solid var(--line); }
+.caps h3 { margin: 0 0 6px; font-size: 15.5px; font-weight: 500; }
+.caps p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+.w-result { margin: 7px 0 0; font-size: 12.5px; color: var(--accent); letter-spacing: .01em; }
+
+.awards { list-style: none; margin: 0; padding: 0; }
+.awards li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: clamp(14px, 3vw, 32px); padding: 14px 0; border-top: 1px solid var(--line); }
+.awards time { font-size: 12.5px; color: var(--accent); }
+.awards h3 { margin: 0 0 4px; font-size: 15.5px; font-weight: 500; }
+.awards p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+
+.contact-block { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.contact-mail {
+  font-size: clamp(20px, 2.2vw, 26px); color: var(--ink); text-decoration: none;
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 4px;
+}
+.contact-mail:hover { color: var(--accent); border-color: var(--accent); }
+.contact-links { display: flex; gap: 22px; }
+.contact-links a { font-size: 13px; color: var(--ink-2); text-decoration: none; }
+.contact-links a:hover { color: var(--accent); }
+
+.view-nav { display: flex; gap: clamp(12px, 2vw, 24px); }
+.view-nav a { font-size: 12px; color: var(--ink-3); text-decoration: none; letter-spacing: .02em; }
+.view-nav a:hover { color: var(--accent); }
+
+.view-foot {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap;
+  margin-top: clamp(44px, 7vh, 78px); padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 11px; letter-spacing: .16em; color: var(--ink-3);
+}
+.foot-cta { margin: 0 0 8px; font-size: 12.5px; letter-spacing: .04em; color: var(--ink-3); }
+.link-btn {
+  background: none; border: 0; padding: 0 0 2px;
+  border-bottom: 1px solid var(--line-strong);
+  font: inherit; font-size: 15px; letter-spacing: .02em; color: var(--ink);
+  cursor: pointer;
+  transition: color .35s var(--ease-soft), border-color .35s var(--ease-soft);
+}
+.link-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+@media (max-width: 760px) {
+  .profile { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .about { grid-template-columns: 1fr; }
+  .skills { grid-template-columns: 1fr; gap: 22px; }
+  .hobbies { grid-template-columns: 1fr; }
+  .exp-list li { grid-template-columns: 1fr; gap: 5px; }
+  .caps { grid-template-columns: 1fr; }
+  .view-nav { display: none; }
+  .timeline li, .awards li { grid-template-columns: 64px minmax(0, 1fr); }
+}
+
+/* =========================================================================
+   内容页：单屏 + 标签切换（不滚动）
+   ========================================================================= */
+.view { overflow: hidden; }
+
+.view-spring {
+  --glass: rgba(250, 248, 242, .74);
+  --glass-line: rgba(22, 24, 26, .12);
+}
+.view-autumn {
+  --glass: rgba(18, 14, 10, .66);
+  --glass-line: rgba(244, 236, 223, .14);
+}
+
+/* 底片：更轻的纱幕，让照片更明显 */
+.view-spring .view-bg {
+  filter: saturate(1.02);
+  --view-scrim: linear-gradient(180deg,
+    rgba(244, 241, 232, .34) 0%,
+    rgba(244, 241, 232, .12) 15%,
+    rgba(244, 241, 232, .2) 52%,
+    rgba(244, 241, 232, .44) 100%);
+}
+.view-autumn .view-bg {
+  filter: saturate(1.02);
+  --view-scrim: linear-gradient(180deg,
+    rgba(10, 8, 6, .42) 0%,
+    rgba(10, 8, 6, .16) 15%,
+    rgba(10, 8, 6, .24) 52%,
+    rgba(10, 8, 6, .48) 100%);
+}
+
+.view-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: clamp(16px, 2.6vh, 24px) var(--gutter);
+}
+.view-mark { font-size: 10.5px; letter-spacing: .28em; text-indent: .28em; color: var(--ink-2); }
+
+.panel-wrap {
+  position: absolute; z-index: 1;
+  inset: clamp(74px, 10vh, 104px) var(--gutter) clamp(66px, 9vh, 96px);
+  display: flex; align-items: center; justify-content: center;
+}
+.panel {
+  width: min(1000px, 100%);
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: 26px;
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .18);
+  overflow: hidden;
+  transition: height .35s var(--ease-soft);
+}
+
+.tabs {
+  display: flex; align-items: center; gap: 4px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.tab {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 13px; letter-spacing: .06em; color: var(--ink-3);
+  transition: color .3s var(--ease-soft), background-color .3s var(--ease-soft);
+}
+.tab:hover { color: var(--ink-2); }
+.tab.active {
+  color: var(--ink);
+  background: var(--accent-2);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel-body {
+  position: relative;
+  flex: 1; min-height: 0;
+  padding: clamp(24px, 4vh, 40px) clamp(24px, 4vw, 48px);
+  display: grid;
+  align-items: start;
+  overflow-y: auto;
+}
+.pane {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0; visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity .4s var(--ease-soft), transform .45s var(--ease), visibility .4s;
+}
+.pane.active { opacity: 1; visibility: visible; transform: none; }
+
+.kicker { margin: 0 0 12px; font-size: 10.5px; letter-spacing: .26em; text-indent: .26em; color: var(--ink-2); }
+.pane h2 {
+  margin: 0;
+  font-family: var(--brush); font-weight: 400;
+  font-size: clamp(34px, 4.2vw, 54px); line-height: 1.08;
+  letter-spacing: .01em; color: var(--ink);
+}
+.p-lead { margin: 14px 0 0; font-size: clamp(14px, 1.15vw, 16px); line-height: 1.85; color: var(--ink-2); max-width: 54ch; }
+
+.name-row { display: flex; align-items: baseline; gap: 14px; }
+.name-en { font-size: 13px; letter-spacing: .12em; color: var(--ink-3); }
+
+.fact-row {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px; margin-top: clamp(22px, 3.6vh, 34px);
+}
+.fact-row div { display: flex; flex-direction: column; gap: 5px; padding-top: 13px; border-top: 1px solid var(--line); }
+.fact-row span { font-size: 11px; letter-spacing: .14em; color: var(--ink-3); }
+.fact-row b { font-size: 15px; font-weight: 500; color: var(--ink); }
+
+.steps { list-style: none; margin: clamp(18px, 3.2vh, 28px) 0 0; padding: 0; }
+.steps li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+.steps span { font-size: 11px; color: var(--accent); letter-spacing: .1em; padding-top: 3px; }
+.steps h3 { margin: 0 0 4px; font-size: 15px; font-weight: 500; }
+.steps p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+.hobby-row {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 3vw, 32px); margin-top: clamp(22px, 3.6vh, 34px);
+}
+.hobby-row div { padding-top: 13px; border-top: 1px solid var(--line); }
+.hobby-row h3 { margin: 0 0 6px; font-size: 15px; font-weight: 500; }
+.hobby-row p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+.gpa-row { display: flex; align-items: flex-end; gap: clamp(24px, 4vw, 48px); margin-top: clamp(16px, 2.8vh, 26px); }
+.gpa { display: flex; flex-direction: column; gap: 6px; }
+.gpa-num { font-size: clamp(64px, 9vw, 112px); font-weight: 300; line-height: .9; color: var(--ink); letter-spacing: -.02em; }
+.gpa-label { font-size: 12px; letter-spacing: .1em; color: var(--ink-3); }
+.gpa-row .p-lead { margin: 0 0 6px; max-width: 30ch; }
+
+.ach-row, .cap-row {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 3vw, 36px); margin-top: clamp(20px, 3.4vh, 30px);
+}
+.ach-row > div, .cap-row > div { padding-top: 13px; border-top: 1px solid var(--line); }
+.ach-tag { display: inline-block; margin-bottom: 8px; font-size: 10.5px; letter-spacing: .12em; color: var(--accent); }
+.ach-row h3, .cap-row h3 { margin: 0 0 6px; font-size: 16px; font-weight: 500; }
+.ach-row p, .cap-row p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+.mail {
+  display: inline-block; margin-top: clamp(18px, 3vh, 26px);
+  font-size: clamp(18px, 2vw, 24px); color: var(--ink); text-decoration: none;
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 4px;
+}
+.mail:hover { color: var(--accent); border-color: var(--accent); }
+
+.view-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: clamp(14px, 2.6vh, 24px) var(--gutter);
+  font-size: 11px; letter-spacing: .12em; color: var(--ink-2);
+}
+.view-bottom .link-btn { font-size: 12.5px; letter-spacing: .04em; }
+
+@media (max-width: 820px) {
+  .panel-wrap { inset: clamp(64px, 9vh, 88px) var(--gutter) clamp(56px, 8vh, 76px); }
+  .panel { border-radius: 20px; }
+  .tabs { padding: 10px 12px; gap: 2px; }
+  .tab { padding: 7px 12px; font-size: 12.5px; }
+  .panel-body { padding: 20px; }
+  .pane h2 { font-size: clamp(28px, 7vw, 40px); }
+  .fact-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hobby-row { grid-template-columns: 1fr; gap: 12px; }
+  .ach-row, .cap-row { grid-template-columns: 1fr; gap: 14px; }
+  .gpa-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .gpa-row .p-lead { margin: 0; }
+}
+
+/* =========================================================================
+   交互增强：标签指示器 / 方向切换 / 面板光晕 / 底片视差
+   ========================================================================= */
+.tabs {
+  position: relative;
+  --tp: 12px; --tx: 14px;
+  padding: var(--tp) var(--tx);
+}
+.tab-indicator {
+  position: absolute;
+  top: var(--tp); bottom: var(--tp); left: 0;
+  border-radius: 999px;
+  background: var(--accent-2);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition: transform .35s var(--ease), width .35s var(--ease);
+  pointer-events: none;
+  z-index: 0;
+}
+.tab { position: relative; z-index: 1; }
+.tab.active { background: transparent; box-shadow: none; }
+
+.panel { position: relative; --gx: 50%; --gy: 50%; }
+.panel::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(320px circle at var(--gx) var(--gy), var(--glow, rgba(255,255,255,.16)), transparent 62%);
+  opacity: 0;
+  transition: opacity .35s var(--ease-soft);
+  z-index: 0;
+}
+.panel:hover::after { opacity: 1; }
+.view-spring .panel { --glow: rgba(255,255,255,.2); }
+.view-autumn .panel { --glow: rgba(255,214,160,.12); }
+.tabs, .panel-body { position: relative; z-index: 1; }
+
+.view-bg {
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0);
+  transition: transform .5s var(--ease-soft);
+  will-change: transform;
+}
+
+.pane.from-right { animation: paneInRight .45s var(--ease) both; }
+.pane.from-left { animation: paneInLeft .45s var(--ease) both; }
+@keyframes paneInRight {
+  from { opacity: 0; transform: translateX(22px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes paneInLeft {
+  from { opacity: 0; transform: translateX(-22px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- 关键词 chips --- */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: clamp(14px, 2.4vh, 20px); }
+.chip {
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .04);
+  font-size: 11.5px; letter-spacing: .04em; color: var(--ink-2);
+  transition: color .3s var(--ease-soft), border-color .3s var(--ease-soft), transform .3s var(--ease);
+}
+.chip:hover { color: var(--ink); border-color: var(--line-strong); transform: translateY(-1px); }
+
+/* --- 学习：手风琴 --- */
+.learn-steps { list-style: none; margin: clamp(18px, 3.2vh, 28px) 0 0; padding: 0; }
+.lstep { border-top: 1px solid var(--line); }
+.lstep:last-child { border-bottom: 1px solid var(--line); }
+.lstep-head {
+  width: 100%;
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) 16px;
+  align-items: center; gap: 16px;
+  padding: 12px 0;
+  border: 0; background: none; text-align: left; color: inherit;
+  cursor: pointer;
+}
+.lstep-head > span { font-size: 11px; color: var(--accent); letter-spacing: .1em; }
+.lstep-head h3 { margin: 0; font-size: 15px; font-weight: 500; }
+.lstep-head em {
+  display: block; margin-top: 3px;
+  font-style: normal; font-size: 11px; letter-spacing: .06em; color: var(--ink-3);
+}
+.lstep-plus { position: relative; width: 14px; height: 14px; }
+.lstep-plus::before, .lstep-plus::after {
+  content: ""; position: absolute; background: var(--ink-3); border-radius: 2px;
+  transition: transform .3s var(--ease-soft), opacity .3s;
+}
+.lstep-plus::before { left: 0; right: 0; top: 6px; height: 1px; }
+.lstep-plus::after { top: 0; bottom: 0; left: 6px; width: 1px; }
+.lstep.open .lstep-plus::after { transform: scaleY(0); opacity: 0; }
+.lstep-body { max-height: 0; overflow: hidden; transition: max-height .35s var(--ease-soft); }
+.lstep.open .lstep-body { max-height: 100px; }
+.lstep-body p { margin: 0 0 13px 50px; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+
+/* --- 爱好卡 --- */
+.hobby-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 2vw, 16px); margin-top: clamp(20px, 3.4vh, 30px); }
+.hobby-card {
+  position: relative; padding: 16px;
+  border: 1px solid var(--line); border-radius: 16px;
+  background: rgba(255, 255, 255, .04);
+  transition: transform .35s var(--ease), border-color .3s var(--ease-soft), box-shadow .35s var(--ease);
+}
+.hobby-card:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: 0 16px 40px rgba(0, 0, 0, .08); }
+.hobby-icon { display: block; width: 26px; height: 26px; margin-bottom: 12px; color: var(--accent); }
+.hobby-icon svg { width: 100%; height: 100%; }
+.hobby-card h3 { margin: 0 0 5px; font-size: 15px; font-weight: 500; }
+.hobby-card p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-2); }
+.eq { display: flex; align-items: flex-end; gap: 3px; height: 16px; margin-top: 12px; }
+.eq i { width: 3px; height: 100%; background: var(--accent); border-radius: 2px; transform-origin: bottom; animation: eqBounce 1.1s ease-in-out infinite; }
+.eq i:nth-child(2) { animation-delay: .12s; }
+.eq i:nth-child(3) { animation-delay: .24s; }
+.eq i:nth-child(4) { animation-delay: .06s; }
+.eq i:nth-child(5) { animation-delay: .18s; }
+.hobby-card:hover .eq i { animation-duration: .7s; }
+@keyframes eqBounce {
+  0%, 100% { transform: scaleY(.32); }
+  50% { transform: scaleY(1); }
+}
+
+/* --- 成绩补充 --- */
+.gpa-side { display: flex; flex-direction: column; }
+.gpa-num { font-variant-numeric: tabular-nums; }
+
+/* --- 成果卡 --- */
+.award-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 16px); margin-top: clamp(20px, 3.4vh, 30px); }
+.award {
+  position: relative; overflow: hidden; padding: 16px;
+  border: 1px solid var(--line); border-radius: 16px;
+  background: rgba(255, 255, 255, .04);
+  transition: transform .35s var(--ease), border-color .3s var(--ease-soft);
+}
+.award:hover { transform: translateY(-4px); border-color: var(--line-strong); }
+.award-tag { display: inline-block; margin-bottom: 8px; font-size: 10.5px; letter-spacing: .12em; color: var(--accent); }
+.award h3 { margin: 0 0 6px; font-size: 16px; font-weight: 500; }
+.award p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+.award-shine {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,.32) 48%, transparent 64%);
+  transform: translateX(-120%);
+  transition: transform .8s var(--ease-soft);
+}
+.award:hover .award-shine { transform: translateX(120%); }
+
+/* --- 能力卡 + 流程 --- */
+.cap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 16px); margin-top: clamp(18px, 3vh, 26px); }
+.cap-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, .04); }
+.cap-card h3 { margin: 0 0 5px; font-size: 15px; font-weight: 500; }
+.cap-card p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink-2); }
+.cap-link { display: inline-block; margin-top: 8px; font-size: 11.5px; color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+.flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: clamp(16px, 2.6vh, 22px); }
+.flow-step {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .04);
+  color: var(--ink-3); font: inherit; font-size: 12px; cursor: pointer;
+  transition: color .3s var(--ease-soft), border-color .3s var(--ease-soft),
+              background-color .3s var(--ease-soft), transform .2s var(--ease);
+}
+.flow-step span { font-size: 10px; color: var(--accent); }
+.flow-step b { font-weight: 500; }
+.flow-step.on, .flow-step:hover { color: var(--ink); border-color: var(--line-strong); background: var(--accent-2); }
+.flow-step:active { transform: scale(.97); }
+.flow-arrow { color: var(--ink-3); font-size: 11px; }
+.flow-note { margin: 12px 0 0; min-height: 1.8em; font-size: 13px; line-height: 1.8; color: var(--ink-2); }
+
+/* --- 联系：复制 --- */
+.contact-block { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.contact-actions { display: flex; align-items: center; gap: 12px; }
+.mini-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: var(--accent-2);
+  color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
+  transition: transform .2s var(--ease), background-color .3s var(--ease-soft);
+}
+.mini-btn:hover { transform: translateY(-1px); }
+.mini-btn:active { transform: translateY(0) scale(.98); }
+.copy-hint { font-size: 11px; letter-spacing: .08em; color: var(--accent); opacity: 0; transition: opacity .3s var(--ease-soft); }
+.copy-hint.show { opacity: 1; }
+
+@media (max-width: 820px) {
+  .tabs { --tp: 10px; --tx: 12px; }
+  .hobby-grid { grid-template-columns: 1fr; }
+  .award-grid { grid-template-columns: 1fr; }
+  .cap-grid { grid-template-columns: 1fr; }
+  .gpa-side { width: 100%; }
+  .lstep-head { grid-template-columns: 28px minmax(0, 1fr) 16px; gap: 12px; }
+  .lstep-body p { margin-left: 40px; }
+}
+
+/* =========================================================================
+   春 · 作品轮播（五个项目）
+   ========================================================================= */
+.carousel { position: relative; margin-top: clamp(16px, 2.8vh, 24px); }
+.carousel-view { display: grid; }
+.proj {
+  grid-area: 1 / 1;
+  display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+  opacity: 0; visibility: hidden; transform: translateX(14px);
+  transition: opacity .35s var(--ease-soft), transform .4s var(--ease), visibility .35s;
+}
+.proj.active { opacity: 1; visibility: visible; transform: none; }
+
+.proj-shot {
+  position: relative;
+  height: clamp(176px, 23vh, 226px);
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  border: 1px solid rgba(255, 255, 255, .55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 16px 40px rgba(40, 60, 30, .12);
+  overflow: hidden;
+}
+.proj-shot[data-accent="lime"] { --a1: #e3f0d9; --a2: #b9d5a8; }
+.proj-shot[data-accent="mint"] { --a1: #dcf0e7; --a2: #a9d3c1; }
+.proj-shot[data-accent="cyan"] { --a1: #dbedf1; --a2: #a6ccd4; }
+.proj-shot[data-accent="amber"] { --a1: #f6e6cd; --a2: #e2bd8f; }
+.proj-shot[data-accent="rose"] { --a1: #f6dfe2; --a2: #dfaeb6; }
+.proj-shot[data-accent="sky"] { --a1: #e0eaf6; --a2: #aac4de; }
+.proj-shot[data-accent="lilac"] { --a1: #ece5f2; --a2: #c9b7da; }
+
+.shot-head { display: flex; gap: 5px; margin-bottom: 14px; }
+.shot-head i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .82); }
+.shot-body {
+  background: rgba(255, 255, 255, .55);
+  border-radius: 10px; padding: 12px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.shot-title { display: block; width: 42%; height: 9px; border-radius: 5px; background: rgba(30, 40, 25, .22); margin-bottom: 9px; }
+.shot-line { display: block; width: 82%; height: 5px; border-radius: 4px; background: rgba(30, 40, 25, .13); margin-bottom: 6px; }
+.shot-line.short { width: 55%; }
+.shot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+.shot-grid span { height: 16px; border-radius: 5px; background: rgba(255, 255, 255, .7); }
+.shot-glyph {
+  position: absolute; right: 8px; bottom: -20px;
+  font-family: var(--brush); font-size: 96px; line-height: 1;
+  color: rgba(30, 50, 20, .1);
+}
+
+.proj-info { min-width: 0; }
+.proj-index { margin: 0 0 8px; font-size: 10.5px; letter-spacing: .16em; color: var(--accent); }
+.proj-info h3 { margin: 0 0 8px; font-size: clamp(20px, 2.2vw, 26px); font-weight: 500; letter-spacing: .01em; }
+.proj-desc { margin: 0; font-size: 13.5px; line-height: 1.85; color: var(--ink-2); }
+.proj-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.proj-tags span { padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, .35); font-size: 10.5px; color: var(--ink-2); }
+.proj-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.proj-status { font-size: 10.5px; letter-spacing: .12em; color: var(--accent); }
+.proj-link {
+  font-size: 12.5px; color: var(--ink); text-decoration: none;
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 2px;
+  transition: color .3s var(--ease-soft), border-color .3s var(--ease-soft);
+}
+.proj-link:hover { color: var(--accent); border-color: var(--accent); }
+
+.carousel-nav { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+.car-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--line-strong); background: rgba(255, 255, 255, .3);
+  color: var(--ink-2); cursor: pointer; font-size: 13px;
+  transition: color .3s var(--ease-soft), background-color .3s var(--ease-soft), transform .2s var(--ease);
+}
+.car-btn:hover { color: var(--ink); background: var(--accent-2); }
+.car-btn:active { transform: scale(.94); }
+.car-count { font-size: 11px; letter-spacing: .12em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.car-count b { color: var(--ink); font-weight: 500; }
+.car-dots { display: flex; gap: 7px; margin-left: auto; }
+.car-dot {
+  width: 6px; height: 6px; padding: 0; border-radius: 50%; border: 0;
+  background: var(--ink-3); opacity: .4; cursor: pointer;
+  transition: opacity .3s var(--ease-soft), transform .3s var(--ease), background-color .3s;
+}
+.car-dot.active { opacity: 1; transform: scale(1.4); background: var(--accent); }
+
+@media (max-width: 820px) {
+  .proj { grid-template-columns: 1fr; gap: 16px; }
+  .proj-shot { height: 158px; }
+  .proj-info h3 { font-size: 20px; }
+  .carousel-nav { flex-wrap: wrap; }
+  .car-dots { margin-left: 0; }
+}
+
+/* =========================================================================
+   过渡：春 · 流水
+   ========================================================================= */
+.trans { position: fixed; inset: 0; z-index: 40; pointer-events: none; visibility: hidden; overflow: hidden; }
+.trans.active { visibility: visible; }
+
+.wv {
+  position: absolute; left: -40vw; width: 180vw; height: 170vh; bottom: -170vh;
+  will-change: transform;
+}
+.wv svg { display: block; width: 100%; height: 100%; animation: waterSway 7s ease-in-out infinite alternate; }
+.wv-1 { filter: blur(7px); opacity: .85; }
+.wv-2 { opacity: .9; }
+.wv-3 { opacity: .95; }
+
+.trans-water.active .wv-1 { animation: waterRise 2.6s cubic-bezier(.55,0,.2,1) 0s forwards; }
+.trans-water.active .wv-2 { animation: waterRise 2.45s cubic-bezier(.55,0,.2,1) .06s forwards; }
+.trans-water.active .wv-3 { animation: waterRise 2.3s cubic-bezier(.55,0,.2,1) .12s forwards; }
+
+/* =========================================================================
+   过渡：秋 · 枫叶
+   ========================================================================= */
+.leaf-veil {
+  position: absolute; inset: 0; opacity: 0;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(96,28,9,.62), rgba(20,8,4,.38) 55%, rgba(8,4,2,0) 100%);
+}
+.trans-leaf.active .leaf-veil { animation: veilPulse 2.2s var(--ease-soft) forwards; }
+
+.leaves { position: absolute; inset: 0; overflow: hidden; }
+.leaf {
+  position: absolute; top: -16vh;
+  display: block;
+  animation: leafFall var(--dur, 2.4s) linear forwards;
+  will-change: transform;
+}
+.leaf i { display: block; width: 100%; height: 100%; animation: leafSway var(--sway, 1.2s) ease-in-out infinite alternate; }
+
+/* =========================================================================
+   关键帧
+   ========================================================================= */
+@keyframes kenburns {
+  from { transform: scale(1.02) translate3d(-.6%, -.4%, 0); }
+  to   { transform: scale(1.1) translate3d(.8%, .8%, 0); }
+}
+@keyframes fall {
+  0%   { transform: translate3d(0, -12vh, 0); opacity: 0; }
+  8%   { opacity: .5; }
+  82%  { opacity: .32; }
+  100% { transform: translate3d(-3vw, 116vh, 0); opacity: 0; }
+}
+@keyframes drift {
+  from { transform: translate3d(-8px, 0, 0) rotate(-16deg); }
+  to   { transform: translate3d(10px, 5px, 0) rotate(22deg); }
+}
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes cueDrop {
+  0%   { top: -100%; opacity: 0; }
+  20%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes waterRise {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, -270vh, 0); }
+}
+@keyframes waterSway {
+  from { transform: translateX(-2.5%); }
+  to   { transform: translateX(2.5%); }
+}
+@keyframes leafFall {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0; }
+  7%   { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translate3d(var(--drift, 40px), 120vh, 0); opacity: 0; }
+}
+@keyframes leafSway {
+  from { transform: rotate(-26deg) translateX(-10px); }
+  to   { transform: rotate(26deg) translateX(10px); }
+}
+@keyframes veilPulse {
+  0%   { opacity: 0; }
+  28%  { opacity: 1; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* =========================================================================
+   响应式 / 降级
+   ========================================================================= */
+@media (max-width: 760px) {
+  .exp-grid { grid-template-columns: 1fr; }
+  .work-row { grid-template-columns: 1fr; gap: 12px; }
+  .w-no { padding-top: 0; }
+  .view-head h1 { font-size: clamp(46px, 14vw, 74px); }
+  .glyph span { font-size: clamp(190px, 50vw, 340px); padding-bottom: 16px; }
+  .caption { height: 72px; }
+  .cap-cn { font-size: 26px; }
+  .mark { letter-spacing: .26em; text-indent: .26em; }
+  .toggle { padding: 8px 13px; font-size: 10px; }
+  .cue-texts { width: 170px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .layer { transform: none !important; }
+  .layer img { animation: none !important; }
+  html[data-season="spring"] .glyph .g-s,
+  html[data-season="autumn"] .glyph .g-a { opacity: .86 !important; }
+  .particles { display: none; }
+  .trans { display: none; }
+}
+</style>
+</head>
+
+<body data-view="hero">
+<main id="stage" class="stage" aria-label="春与秋，两种季节界面">
+
+  <!-- 背景 -->
+  <div class="media" aria-hidden="true">
+    <div class="layer spring"><img src="assets/spring-hero.jpg" alt="" fetchpriority="high" decoding="async" /></div>
+    <div class="layer autumn"><img src="assets/autumn-hero.jpg" alt="" decoding="async" /></div>
+    <div class="tone spring"></div>
+    <div class="tone autumn"></div>
+    <div class="particles spring" data-particles="spring"></div>
+    <div class="particles autumn" data-particles="autumn"></div>
+    <div class="vignette"></div>
+    <div class="grain"></div>
+  </div>
+
+  <!-- 角落里的那个字 -->
+  <div class="glyph" aria-hidden="true">
+    <span class="g-s">春</span>
+    <span class="g-a">秋</span>
+  </div>
+
+  <!-- 界面 -->
+  <div class="ui">
+    <header class="topbar">
+      <div class="left">
+        <span class="mark">
+          <i class="mark-dot" aria-hidden="true"></i>
+          <span>CHUNQIU</span>
+          <span class="mark-year">PORTFOLIO</span>
+        </span>
+        <div class="caption">
+          <div class="cap cap-s">
+            <span class="cap-en">01 · Spring</span>
+            <span class="cap-cn">春日生长</span>
+          </div>
+          <div class="cap cap-a">
+            <span class="cap-en">02 · Autumn</span>
+            <span class="cap-cn">秋日沉淀</span>
+          </div>
+        </div>
+        <p class="cover-role">设计 × 前端 · 杭州</p>
+      </div>
+
+      <button class="toggle" id="toggle" type="button" aria-label="切换季节">
+        <span class="dots" aria-hidden="true"><i class="dot-s"></i><i class="dot-a"></i></span>
+        <span class="tlabel">切换季节</span>
+      </button>
+    </header>
+
+    <div class="scroll-cue" aria-hidden="true">
+      <div class="cue-texts">
+        <span class="cue-text cue-s">下滑 · 潜入春的实验</span>
+        <span class="cue-text cue-a">下滑 · 走进秋的作品</span>
+      </div>
+      <span class="cue-line"></span>
+    </div>
+  </div>
+</main>
+
+<!-- ============================ 春 · 生长中的我 ============================ -->
+<section class="view view-spring" id="viewSpring" aria-label="春日：生长中的我">
+  <div class="view-bg" aria-hidden="true"></div>
+
+  <div class="view-top">
+    <button class="back" type="button" data-back>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      返回
+    </button>
+    <span class="view-mark">春 · Spring</span>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <nav class="tabs" role="tablist" aria-label="春页内容">
+        <span class="tab-indicator" aria-hidden="true"></span>
+        <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="sp-about" data-tab="sp-about">关于</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sp-learn" data-tab="sp-learn">学习</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sp-hobby" data-tab="sp-hobby">爱好</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sp-work" data-tab="sp-work">作品</button>
+      </nav>
+
+      <div class="panel-body">
+        <section class="pane active" id="sp-about" role="tabpanel">
+          <p class="kicker">关于 · About</p>
+          <div class="name-row">
+            <h2>春秋</h2>
+            <span class="name-en">Chunqiu</span>
+          </div>
+          <p class="p-lead">大二在读，数智方向。喜欢把问题拆成结构，再动手做出来。</p>
+          <div class="fact-row">
+            <div><span>阶段</span><b>大二</b></div>
+            <div><span>方向</span><b>数智 / AI</b></div>
+            <div><span>状态</span><b>在做中学</b></div>
+          </div>
+          <div class="chips">
+            <span class="chip">数智</span>
+            <span class="chip">AI</span>
+            <span class="chip">设计</span>
+            <span class="chip">代码</span>
+            <span class="chip">在做中学</span>
+          </div>
+        </section>
+
+        <section class="pane" id="sp-learn" role="tabpanel">
+          <p class="kicker">学习 · Learning</p>
+          <h2>在做中学，在学中进步</h2>
+          <ol class="learn-steps">
+            <li class="lstep open">
+              <button class="lstep-head" type="button" aria-expanded="true">
+                <span>01</span>
+                <div><h3>大一 · 打基础</h3><em>基础课</em></div>
+                <i class="lstep-plus" aria-hidden="true"></i>
+              </button>
+              <div class="lstep-body"><p>把基础课学扎实，为后面的技术课打底。</p></div>
+            </li>
+            <li class="lstep">
+              <button class="lstep-head" type="button" aria-expanded="false">
+                <span>02</span>
+                <div><h3>大二 · 接触技术</h3><em>人工智能 / 数智编程</em></div>
+                <i class="lstep-plus" aria-hidden="true"></i>
+              </button>
+              <div class="lstep-body"><p>开始学人工智能、数智编程等技术课程。</p></div>
+            </li>
+            <li class="lstep">
+              <button class="lstep-head" type="button" aria-expanded="false">
+                <span>03</span>
+                <div><h3>现在 · 用项目验证</h3><em>智能通知系统</em></div>
+                <i class="lstep-plus" aria-hidden="true"></i>
+              </button>
+              <div class="lstep-body"><p>把学到的流程用到真实开发里。</p></div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="pane" id="sp-hobby" role="tabpanel">
+          <p class="kicker">爱好 · Off-screen</p>
+          <h2>不在屏幕前的时候</h2>
+          <div class="hobby-grid">
+            <div class="hobby-card">
+              <span class="hobby-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c3.5-1 4.5-4 6-7s4-5 8-6"/><circle cx="4.5" cy="19.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="7" r="1.4" fill="currentColor" stroke="none"/></svg>
+              </span>
+              <h3>City walk</h3>
+              <p>用脚步认识城市，也顺便想事情。</p>
+            </div>
+            <div class="hobby-card">
+              <span class="hobby-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="4"/><path d="M10.8 13.2 19 5M13.5 11l2.6-.8M15.6 9l2.6-.8M17.7 7l2.6-.8M10.8 13.2l-2 4.6"/></svg>
+              </span>
+              <h3>羽毛球</h3>
+              <p>出汗、专注，把注意力从屏幕里拿出来。</p>
+            </div>
+            <div class="hobby-card">
+              <span class="hobby-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>
+              </span>
+              <h3>听歌</h3>
+              <p>给写代码和发呆都配一个背景音。</p>
+              <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="pane" id="sp-work" role="tabpanel">
+          <p class="kicker">作品 · Projects</p>
+          <h2>做过的一些东西</h2>
+
+          <div class="carousel" id="projCarousel">
+            <div class="carousel-view">
+              <article class="proj active">
+                <div class="proj-shot" data-accent="lime" aria-hidden="true">
+                  <div class="shot-head"><i></i><i></i><i></i></div>
+                  <div class="shot-body">
+                    <span class="shot-title"></span>
+                    <span class="shot-line"></span>
+                    <span class="shot-line short"></span>
+                    <div class="shot-grid"><span></span><span></span><span></span><span></span></div>
+                  </div>
+                  <span class="shot-glyph">01</span>
+                </div>
+                <div class="proj-info">
+                  <p class="proj-index">01 · Personal Portfolio</p>
+                  <h3>个人作品集网站</h3>
+                  <p class="proj-desc">深色主题、响应式布局、流畅滚动的个人作品集首页，把 5 个实战项目集中展示。</p>
+                  <div class="proj-tags"><span>React</span><span>TypeScript</span><span>Tailwind</span></div>
+                  <div class="proj-foot">
+                    <span class="proj-status">已上线</span>
+                    <a class="proj-link" href="https://2006chunqiu.github.io/vibe-tools/" target="_blank" rel="noopener">打开项目 ↗</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="proj">
+                <div class="proj-shot" data-accent="mint" aria-hidden="true">
+                  <div class="shot-head"><i></i><i></i><i></i></div>
+                  <div class="shot-body">
+                    <span class="shot-title"></span>
+                    <span class="shot-line"></span>
+                    <span class="shot-line short"></span>
+                    <div class="shot-grid"><span></span><span></span><span></span><span></span></div>
+                  </div>
+                  <span class="shot-glyph">02</span>
+                </div>
+                <div class="proj-info">
+                  <p class="proj-index">02 · Task Flow</p>
+                  <h3>待办清单 · 进阶版</h3>
+                  <p class="proj-desc">支持排序、截止日期、优先级和分类的待办管理，带多条件筛选、搜索、编辑与完成率统计。</p>
+                  <div class="proj-tags"><span>Zustand</span><span>date-fns</span><span>LocalStorage</span></div>
+                  <div class="proj-foot">
+                    <span class="proj-status">可交互</span>
+                    <a class="proj-link" href="https://2006chunqiu.github.io/vibe-tools/" target="_blank" rel="noopener">打开项目 ↗</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="proj">
+                <div class="proj-shot" data-accent="cyan" aria-hidden="true">
+                  <div class="shot-head"><i></i><i></i><i></i></div>
+                  <div class="shot-body">
+                    <span class="shot-title"></span>
+                    <span class="shot-line"></span>
+                    <span class="shot-line short"></span>
+                    <div class="shot-grid"><span></span><span></span><span></span><span></span></div>
+                  </div>
+                  <span class="shot-glyph">03</span>
+                </div>
+                <div class="proj-info">
+                  <p class="proj-index">03 · Markdown Studio</p>
+                  <h3>Markdown 笔记</h3>
+                  <p class="proj-desc">笔记列表、实时双栏预览、GFM 语法与代码高亮，支持搜索、自动保存和快捷编辑。</p>
+                  <div class="proj-tags"><span>react-markdown</span><span>Prism</span><span>LocalStorage</span></div>
+                  <div class="proj-foot">
+                    <span class="proj-status">可交互</span>
+                    <a class="proj-link" href="https://2006chunqiu.github.io/vibe-tools/" target="_blank" rel="noopener">打开项目 ↗</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="proj">
+                <div class="proj-shot" data-accent="amber" aria-hidden="true">
+                  <div class="shot-head"><i></i><i></i><i></i></div>
+                  <div class="shot-body">
+                    <span class="shot-title"></span>
+                    <span class="shot-line"></span>
+                    <span class="shot-line short"></span>
+                    <div class="shot-grid"><span></span><span></span><span></span><span></span></div>
+                  </div>
+                  <span class="shot-glyph">04</span>
+                </div>
+                <div class="proj-info">
+                  <p class="proj-index">04 · Focus Timer</p>
+                  <h3>番茄钟计时器</h3>
+                  <p class="proj-desc">25 / 5 分钟专注循环，自定义时长、通知、提示音和今日 / 本周专注统计。</p>
+                  <div class="proj-tags"><span>Notification API</span><span>Web Audio</span><span>LocalStorage</span></div>
+                  <div class="proj-foot">
+                    <span class="proj-status">可交互</span>
+                    <a class="proj-link" href="https://2006chunqiu.github.io/vibe-tools/" target="_blank" rel="noopener">打开项目 ↗</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="proj">
+                <div class="proj-shot" data-accent="rose" aria-hidden="true">
+                  <div class="shot-head"><i></i><i></i><i></i></div>
+                  <div class="shot-body">
+                    <span class="shot-title"></span>
+                    <span class="shot-line"></span>
+                    <span class="shot-line short"></span>
+                    <div class="shot-grid"><span></span><span></span><span></span><span></span></div>
+                  </div>
+                  <span class="shot-glyph">05</span>
+                </div>
+                <div class="proj-info">
+                  <p class="proj-index">05 · Weather Now</p>
+                  <h3>天气查询应用</h3>
+                  <p class="proj-desc">城市搜索、浏览器定位、当前天气与 7 日预报，支持收藏常用城市和错误提示。</p>
+                  <div class="proj-tags"><span>Open-Meteo API</span><span>Geolocation</span><span>LocalStorage</span></div>
+                  <div class="proj-foot">
+                    <span class="proj-status">可交互</span>
+                    <a class="proj-link" href="https://2006chunqiu.github.io/vibe-tools/" target="_blank" rel="noopener">打开项目 ↗</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="proj">
+                <div class="proj-shot" data-accent="sky" aria-hidden="true">
+                  <div class="shot-head"><i></i><i></i><i></i></div>
+                  <div class="shot-body">
+                    <span class="shot-title"></span>
+                    <span class="shot-line"></span>
+                    <span class="shot-line short"></span>
+                    <div class="shot-grid"><span></span><span></span><span></span><span></span></div>
+                  </div>
+                  <span class="shot-glyph">06</span>
+                </div>
+                <div class="proj-info">
+                  <p class="proj-index">06 · Smart Notify</p>
+                  <h3>智能通知系统</h3>
+                  <p class="proj-desc">自主完成开发的智能通知系统，从需求梳理到上线由我一个人走通；访问需要登录。</p>
+                  <div class="proj-tags"><span>Codex</span><span>AI 辅助开发</span><span>Web</span></div>
+                  <div class="proj-foot">
+                    <span class="proj-status">在线 · 需登录</span>
+                    <a class="proj-link" href="http://218.197.118.44:8848" target="_blank" rel="noopener">打开系统 ↗</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="proj">
+                <div class="proj-shot" data-accent="lilac" aria-hidden="true">
+                  <div class="shot-head"><i></i><i></i><i></i></div>
+                  <div class="shot-body">
+                    <span class="shot-title"></span>
+                    <span class="shot-line"></span>
+                    <span class="shot-line short"></span>
+                    <div class="shot-grid"><span></span><span></span><span></span><span></span></div>
+                  </div>
+                  <span class="shot-glyph">07</span>
+                </div>
+                <div class="proj-info">
+                  <p class="proj-index">07 · Repaint</p>
+                  <h3>重描 Repaint</h3>
+                  <p class="proj-desc">借画家的眼睛重新看照片：浏览器先读光与色，DeepSeek 写画稿，图像模型再落笔。</p>
+                  <div class="proj-tags"><span>DeepSeek</span><span>图像模型</span><span>浏览器端</span></div>
+                  <div class="proj-foot">
+                    <span class="proj-status">在线</span>
+                    <a class="proj-link" href="https://2006chunqiu.github.io/repaint/" target="_blank" rel="noopener">打开项目 ↗</a>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="carousel-nav">
+              <button class="car-btn" type="button" data-dir="-1" aria-label="上一个项目">←</button>
+              <span class="car-count"><b id="projNow">01</b> / 07</span>
+              <button class="car-btn" type="button" data-dir="1" aria-label="下一个项目">→</button>
+              <div class="car-dots" role="tablist" aria-label="项目">
+                <button class="car-dot active" type="button" data-go="0" aria-label="第 1 个项目"></button>
+                <button class="car-dot" type="button" data-go="1" aria-label="第 2 个项目"></button>
+                <button class="car-dot" type="button" data-go="2" aria-label="第 3 个项目"></button>
+                <button class="car-dot" type="button" data-go="3" aria-label="第 4 个项目"></button>
+                <button class="car-dot" type="button" data-go="4" aria-label="第 5 个项目"></button>
+                <button class="car-dot" type="button" data-go="5" aria-label="第 6 个项目"></button>
+                <button class="car-dot" type="button" data-go="6" aria-label="第 7 个项目"></button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <footer class="view-bottom">
+    <span>春 · 生长中的我</span>
+    <button class="link-btn" type="button" data-goto="autumn">另一半 · 秋日沉淀 →</button>
+  </footer>
+</section>
+
+<!-- ============================ 秋 · 沉淀下来的我 ============================ -->
+<section class="view view-autumn" id="viewAutumn" aria-label="秋日：沉淀下来的我">
+  <div class="view-bg" aria-hidden="true"></div>
+
+  <div class="view-top">
+    <button class="back" type="button" data-back>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      返回
+    </button>
+    <span class="view-mark">秋 · Autumn</span>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <nav class="tabs" role="tablist" aria-label="秋页内容">
+        <span class="tab-indicator" aria-hidden="true"></span>
+        <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="au-gpa" data-tab="au-gpa">成绩</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="au-ach" data-tab="au-ach">成果</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="au-cap" data-tab="au-cap">能力</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="au-contact" data-tab="au-contact">联系</button>
+      </nav>
+
+      <div class="panel-body">
+        <section class="pane active" id="au-gpa" role="tabpanel">
+          <p class="kicker">成绩 · GPA</p>
+          <div class="gpa-row">
+            <div class="gpa">
+              <span class="gpa-num" data-gpa>4.1</span>
+              <span class="gpa-label">大一学年绩点</span>
+            </div>
+            <div class="gpa-side">
+              <p class="p-lead">基础课阶段先把底盘打稳，后面的技术课才接得住。</p>
+              <div class="chips">
+                <span class="chip">基础课</span>
+                <span class="chip">数智</span>
+                <span class="chip">实践</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="pane" id="au-ach" role="tabpanel">
+          <p class="kicker">成果 · Achievements</p>
+          <h2>已经拿到的</h2>
+          <div class="award-grid">
+            <article class="award">
+              <span class="award-tag">省级竞赛</span>
+              <h3>AIC 省赛一等奖</h3>
+              <p>把 AI 工具与开发流程用到真实题目里。</p>
+              <span class="award-shine" aria-hidden="true"></span>
+            </article>
+            <article class="award">
+              <span class="award-tag">学院荣誉</span>
+              <h3>院三好学生</h3>
+              <p>学业与综合表现。</p>
+              <span class="award-shine" aria-hidden="true"></span>
+            </article>
+          </div>
+        </section>
+
+        <section class="pane" id="au-cap" role="tabpanel">
+          <p class="kicker">能力 · Abilities</p>
+          <h2>能独立做完一件事</h2>
+          <div class="cap-grid">
+            <div class="cap-card"><h3>Codex 开发流程</h3><p>熟练掌握，从需求到落地都能走通。</p></div>
+            <div class="cap-card"><h3>智能通知系统</h3><p>自主完成开发任务。</p><a class="cap-link" href="http://218.197.118.44:8848" target="_blank" rel="noopener">打开系统 ↗</a></div>
+          </div>
+          <div class="flow" aria-label="开发流程">
+            <button class="flow-step on" type="button" data-flow="0"><span>01</span><b>需求</b></button>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <button class="flow-step" type="button" data-flow="1"><span>02</span><b>生成</b></button>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <button class="flow-step" type="button" data-flow="2"><span>03</span><b>审查</b></button>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <button class="flow-step" type="button" data-flow="3"><span>04</span><b>落地</b></button>
+          </div>
+          <p class="flow-note" id="flowNote">先确认要解决的问题和边界。</p>
+        </section>
+
+        <section class="pane" id="au-contact" role="tabpanel">
+          <p class="kicker">联系 · Contact</p>
+          <h2>聊一聊</h2>
+          <p class="p-lead">对 AI 工具、数智项目或任何有意思的事感兴趣，欢迎来邮件。</p>
+          <div class="contact-block">
+            <a class="mail" href="mailto:3402990356@qq.com">3402990356@qq.com</a>
+            <div class="contact-actions">
+              <button class="mini-btn" type="button" data-copy="3402990356@qq.com">复制邮箱</button>
+              <span class="copy-hint" id="copyHint" aria-live="polite"></span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <footer class="view-bottom">
+    <span>秋 · 沉淀下来的我</span>
+    <button class="link-btn" type="button" data-goto="spring">另一半 · 春日生长 →</button>
+  </footer>
+</section>
+
+<!-- ============================ 过渡层 ============================ -->
+<div class="trans trans-water" id="transWater" aria-hidden="true">
+  <div class="wv wv-1">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wg1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e7f4f2" stop-opacity=".85"/>
+          <stop offset="1" stop-color="#b6d8d7" stop-opacity=".6"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,150 C120,90 240,210 360,150 C480,90 600,210 720,150 C840,90 960,210 1080,150 C1200,90 1320,210 1440,150 L1440,900 L0,900 Z" fill="url(#wg1)"/>
+    </svg>
+  </div>
+  <div class="wv wv-2">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#dff0ee" stop-opacity=".92"/>
+          <stop offset="1" stop-color="#9dcbcb" stop-opacity=".75"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,110 C150,170 270,50 420,110 C570,170 690,50 840,110 C990,170 1110,50 1260,110 C1360,150 1400,100 1440,90 L1440,900 L0,900 Z" fill="url(#wg2)"/>
+    </svg>
+  </div>
+  <div class="wv wv-3">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wg3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f1fbf9" stop-opacity=".96"/>
+          <stop offset="1" stop-color="#a9d3d2" stop-opacity=".88"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,140 C140,80 260,200 400,140 C540,80 660,200 800,140 C940,80 1060,200 1200,140 C1320,90 1420,170 1440,150 L1440,900 L0,900 Z" fill="url(#wg3)"/>
+      <path d="M0,140 C140,80 260,200 400,140 C540,80 660,200 800,140 C940,80 1060,200 1200,140 C1320,90 1420,170 1440,150" fill="none" stroke="rgba(255,255,255,.62)" stroke-width="2.2"/>
+    </svg>
+  </div>
+</div>
+
+<div class="trans trans-leaf" id="transLeaf" aria-hidden="true">
+  <div class="leaf-veil"></div>
+  <div class="leaves" id="leaves"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var root = document.documentElement;
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var stage = document.getElementById("stage");
+  var toggle = document.getElementById("toggle");
+
+  var viewSpring = document.getElementById("viewSpring");
+  var viewAutumn = document.getElementById("viewAutumn");
+  var waterEl = document.getElementById("transWater");
+  var leafEl = document.getElementById("transLeaf");
+  var leavesEl = document.getElementById("leaves");
+
+  var current = "spring";
+  var state = "hero";            /* hero | transition | content */
+  var interacted = false;
+  var autoTimer = null;
+
+  /* ------------------------------------------------------------------ */
+  /* 季节                                                                */
+  /* ------------------------------------------------------------------ */
+  function updateChrome() {
+    var label = "切换到" + (current === "spring" ? "秋季" : "春季");
+    if (toggle) toggle.setAttribute("aria-label", label);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", current === "autumn" ? "#0b0907" : "#f4f1e8");
+  }
+
+  function setSeason(next) {
+    if (next !== "spring" && next !== "autumn") return;
+    if (next === current) return;
+    current = next;
+    root.setAttribute("data-season", next);
+    updateChrome();
+  }
+
+  function nextSeason() { setSeason(current === "spring" ? "autumn" : "spring"); }
+
+  function interact() {
+    if (!interacted) {
+      interacted = true;
+      window.clearTimeout(autoTimer);
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 视图                                                                */
+  /* ------------------------------------------------------------------ */
+  function viewFor(season) { return season === "spring" ? viewSpring : viewAutumn; }
+  function otherView(season) { return season === "spring" ? viewAutumn : viewSpring; }
+
+  function showView(season) {
+    var v = viewFor(season);
+    otherView(season).classList.remove("active");
+    v.classList.add("active");
+    v.scrollTop = 0;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 枫叶                                                                */
+  /* ------------------------------------------------------------------ */
+  var LEAF_COLORS = ["#c0392b", "#d34a2a", "#e0642e", "#d98a2b", "#a93226", "#e8a33d"];
+  var LEAF_PATH = "M32 2 C33 8 34 12 35.5 16 C39 14 43 13 48 13 C45 17 42.5 20 40.5 23 C46.5 23 52 25 57 29 C51.5 30.5 46 32 42 33.5 C46.5 36.5 49.5 40.5 51.5 45.5 C46 43 40.5 43 36.5 44 C37.5 48.5 37.5 53 36.5 58 L34 56 L34 63 L30 63 L30 56 L27.5 58 C26.5 53 26.5 48.5 27.5 44 C23.5 43 18 43 12.5 45.5 C14.5 40.5 17.5 36.5 22 33.5 C18 32 12.5 30.5 7 29 C12 25 17.5 23 23.5 23 C21.5 20 19 17 16 13 C21 13 25 14 28.5 16 C30 12 31 8 32 2 Z";
+  var LEAF_VEINS = '<path d="M32 58 L32 9 M32 34 L19 24 M32 34 L45 24 M32 44 L24 40 M32 44 L40 40" stroke="rgba(28,10,4,.32)" stroke-width="1.2" stroke-linecap="round" fill="none"/>';
+
+  function spawnLeaves() {
+    if (!leavesEl) return;
+    leavesEl.innerHTML = "";
+    var n = window.innerWidth < 700 ? 44 : 68;
+    for (var i = 0; i < n; i++) {
+      var leaf = document.createElement("span");
+      leaf.className = "leaf";
+      var size = 16 + Math.random() * 44;
+      leaf.style.left = (Math.random() * 112 - 6).toFixed(2) + "vw";
+      leaf.style.width = size.toFixed(1) + "px";
+      leaf.style.height = size.toFixed(1) + "px";
+      leaf.style.setProperty("--dur", (1.8 + Math.random() * 1.8).toFixed(2) + "s");
+      leaf.style.setProperty("--sway", (0.9 + Math.random() * 1.2).toFixed(2) + "s");
+      leaf.style.setProperty("--drift", (Math.random() * 240 - 120).toFixed(0) + "px");
+      leaf.style.animationDelay = (Math.random() * 0.7).toFixed(2) + "s";
+      leaf.style.opacity = (0.55 + Math.random() * 0.45).toFixed(2);
+      leaf.style.filter = "blur(" + (Math.random() * 1.6).toFixed(1) + "px)";
+
+      var inner = document.createElement("i");
+      var color = LEAF_COLORS[(Math.random() * LEAF_COLORS.length) | 0];
+      inner.innerHTML = '<svg viewBox="0 0 64 64" width="100%" height="100%"><path d="' + LEAF_PATH + '" fill="' + color + '"/>' + LEAF_VEINS + '</svg>';
+      leaf.appendChild(inner);
+      leavesEl.appendChild(leaf);
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 进入 / 返回                                                          */
+  /* ------------------------------------------------------------------ */
+  function enterContent() {
+    if (state !== "hero") return;
+    state = "transition";
+    interact();
+
+    var season = current;
+    var view = viewFor(season);
+    var overlay = season === "spring" ? waterEl : leafEl;
+
+    showView(season);
+    fitPanel(view.querySelector(".panel"));
+    maybeGPA(season);
+
+    overlay.classList.remove("active");
+    void overlay.offsetWidth;
+    if (season === "autumn") spawnLeaves();
+    overlay.classList.add("active");
+
+    var swapAt = reduceMotion ? 60 : (season === "spring" ? 1000 : 880);
+    var endAt = reduceMotion ? 240 : (season === "spring" ? 2500 : 2350);
+
+    window.setTimeout(function () {
+      document.body.setAttribute("data-view", "content");
+      view.scrollTop = 0;
+    }, swapAt);
+
+    window.setTimeout(function () {
+      overlay.classList.remove("active");
+      if (season === "autumn") leavesEl.innerHTML = "";
+      state = "content";
+    }, endAt);
+  }
+
+  function backToHero() {
+    if (state !== "content") return;
+    state = "transition";
+    document.body.setAttribute("data-view", "hero");
+    var v = document.querySelector(".view.active");
+    window.setTimeout(function () {
+      if (v) v.classList.remove("active");
+      state = "hero";
+    }, 720);
+  }
+
+  /* 在春 / 秋两个内容页之间直接切换，不回到封面 */
+  function switchView(season) {
+    if (state !== "content" || season === current) return;
+    var cur = document.querySelector(".view.active");
+    var next = viewFor(season);
+    current = season;
+    root.setAttribute("data-season", season);
+    updateChrome();
+    next.classList.add("active");
+    next.scrollTop = 0;
+    fitPanel(next.querySelector(".panel"));
+    maybeGPA(season);
+    if (cur && cur !== next) cur.classList.remove("active");
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 输入                                                                */
+  /* ------------------------------------------------------------------ */
+  stage.addEventListener("click", function () { interact(); nextSeason(); });
+
+  if (toggle) {
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      interact();
+      nextSeason();
+    });
+  }
+
+  window.addEventListener("wheel", function (e) {
+    if (state === "hero") {
+      if (e.deltaY > 4) { e.preventDefault(); enterContent(); }
+    }
+  }, { passive: false });
+
+  [viewSpring, viewAutumn].forEach(function (v) {
+    v.addEventListener("wheel", function (e) {
+      if (state === "content" && v.scrollTop <= 1 && e.deltaY < -8) backToHero();
+    }, { passive: true });
+  });
+
+  var touchY = 0;
+  window.addEventListener("touchstart", function (e) {
+    touchY = e.touches[0].clientY;
+  }, { passive: true });
+  window.addEventListener("touchend", function (e) {
+    var dy = e.changedTouches[0].clientY - touchY;
+    if (state === "hero" && dy < -50) { enterContent(); }
+    else if (state === "content" && dy > 60) {
+      var v = document.querySelector(".view.active");
+      if (v && v.scrollTop <= 1) backToHero();
+    }
+  }, { passive: true });
+
+  window.addEventListener("keydown", function (e) {
+    if (state === "hero") {
+      if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); enterContent(); }
+      else if (e.key === "ArrowLeft") { interact(); setSeason("spring"); }
+      else if (e.key === "ArrowRight") { interact(); setSeason("autumn"); }
+    } else if (state === "content") {
+      if (e.key === "Escape") {
+        backToHero();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        var v = document.querySelector(".view.active");
+        if (!v) return;
+        if (v.querySelector("#sp-work.active")) {
+          showProject(projIndex + (e.key === "ArrowRight" ? 1 : -1));
+          e.preventDefault();
+          return;
+        }
+        var tabs = Array.prototype.slice.call(v.querySelectorAll(".tab"));
+        if (!tabs.length) return;
+        var idx = -1;
+        tabs.forEach(function (t, i) { if (t.classList.contains("active")) idx = i; });
+        var next = (idx + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[next].click();
+        tabs[next].focus();
+        e.preventDefault();
+      }
+    }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-back]"), function (b) {
+    b.addEventListener("click", backToHero);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-goto]"), function (b) {
+    b.addEventListener("click", function () {
+      switchView(b.getAttribute("data-goto"));
+    });
+  });
+
+  /* 单屏标签切换 + 面板高度自适应 + 交互 */
+  function fitPanel(panel) {
+    if (!panel) return;
+    var tabs = panel.querySelector(".tabs");
+    var body = panel.querySelector(".panel-body");
+    var active = body && body.querySelector(".pane.active");
+    if (!tabs || !body || !active) return;
+    var cs = window.getComputedStyle(body);
+    var pt = parseFloat(cs.paddingTop) || 0;
+    var pb = parseFloat(cs.paddingBottom) || 0;
+    panel.style.height = (tabs.offsetHeight + active.offsetHeight + pt + pb) + "px";
+  }
+
+  function setIndicator(panel) {
+    var tabs = panel.querySelector(".tabs");
+    var ind = tabs && tabs.querySelector(".tab-indicator");
+    var active = tabs && tabs.querySelector(".tab.active");
+    if (!ind || !active) return;
+    ind.style.width = active.offsetWidth + "px";
+    ind.style.transform = "translateX(" + active.offsetLeft + "px)";
+  }
+
+  function animateGPA() {
+    var el = document.querySelector("[data-gpa]");
+    if (!el) return;
+    if (reduceMotion) { el.textContent = "4.1"; return; }
+    var to = 4.1, dur = 900, t0 = 0;
+    el.textContent = "0.0";
+    function step(t) {
+      if (!t0) t0 = t;
+      var p = Math.min((t - t0) / dur, 1);
+      var e = 1 - Math.pow(1 - p, 3);
+      el.textContent = (to * e).toFixed(1);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function maybeGPA(season) {
+    if (season === "autumn" && document.querySelector("#au-gpa.active")) animateGPA();
+  }
+
+  var panelEls = Array.prototype.slice.call(document.querySelectorAll(".panel"));
+  panelEls.forEach(function (panel) {
+    var tabs = Array.prototype.slice.call(panel.querySelectorAll(".tab"));
+    var panes = Array.prototype.slice.call(panel.querySelectorAll(".pane"));
+
+    function activate(tab) {
+      var idx = tabs.indexOf(tab);
+      var prev = -1;
+      tabs.forEach(function (t, i) { if (t.classList.contains("active")) prev = i; });
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.classList.toggle("active", on);
+        t.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      var id = tab.getAttribute("data-tab");
+      var dir = idx >= prev ? 1 : -1;
+      panes.forEach(function (p) {
+        var on = p.id === id;
+        p.classList.toggle("active", on);
+        p.classList.remove("from-left", "from-right");
+        if (on && idx !== prev) p.classList.add(dir > 0 ? "from-right" : "from-left");
+      });
+      setIndicator(panel);
+      fitPanel(panel);
+      if (id === "au-gpa") animateGPA();
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () { activate(tab); });
+    });
+
+    /* 手风琴：学习经历 */
+    Array.prototype.forEach.call(panel.querySelectorAll(".lstep-head"), function (head) {
+      head.addEventListener("click", function () {
+        var li = head.closest(".lstep");
+        var list = li.parentElement;
+        var willOpen = !li.classList.contains("open");
+        Array.prototype.forEach.call(list.querySelectorAll(".lstep"), function (item) {
+          item.classList.remove("open");
+          var h = item.querySelector(".lstep-head");
+          if (h) h.setAttribute("aria-expanded", "false");
+        });
+        if (willOpen) {
+          li.classList.add("open");
+          head.setAttribute("aria-expanded", "true");
+        }
+        window.setTimeout(function () { fitPanel(panel); }, 360);
+      });
+    });
+  });
+
+  /* 能力流程步进 */
+  var flowNotes = [
+    "先确认要解决的问题和边界。",
+    "用 Codex 快速产出可运行的初版。",
+    "读代码、改结构、补测试。",
+    "部署、验证、再迭代。"
+  ];
+  Array.prototype.forEach.call(document.querySelectorAll("[data-flow]"), function (btn) {
+    function pick() {
+      var group = btn.parentElement.querySelectorAll("[data-flow]");
+      Array.prototype.forEach.call(group, function (b) { b.classList.toggle("on", b === btn); });
+      var note = document.getElementById("flowNote");
+      if (note) note.textContent = flowNotes[parseInt(btn.getAttribute("data-flow"), 10)] || "";
+    }
+    btn.addEventListener("pointerenter", pick);
+    btn.addEventListener("focus", pick);
+    btn.addEventListener("click", pick);
+  });
+
+  /* 复制邮箱 */
+  function fallbackCopy(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { }
+    document.body.removeChild(ta);
+    done(ok);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"), function (btn) {
+    btn.addEventListener("click", function () {
+      var text = btn.getAttribute("data-copy");
+      var hint = document.getElementById("copyHint");
+      function done(ok) {
+        if (!hint) return;
+        hint.textContent = ok ? "已复制" : "复制失败，请手动选择";
+        hint.classList.add("show");
+        window.setTimeout(function () { hint.classList.remove("show"); }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallbackCopy(text, done); });
+      } else {
+        fallbackCopy(text, done);
+      }
+    });
+  });
+
+  /* 指针光晕 + 底片视差 */
+  [viewSpring, viewAutumn].forEach(function (view) {
+    var panel = view.querySelector(".panel");
+    var bg = view.querySelector(".view-bg");
+    view.addEventListener("pointermove", function (e) {
+      if (reduceMotion) return;
+      var r = view.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width;
+      var y = (e.clientY - r.top) / r.height;
+      if (panel) {
+        panel.style.setProperty("--gx", (x * 100).toFixed(1) + "%");
+        panel.style.setProperty("--gy", (y * 100).toFixed(1) + "%");
+      }
+      if (bg) {
+        bg.style.setProperty("--px", ((x - .5) * 16).toFixed(1) + "px");
+        bg.style.setProperty("--py", ((y - .5) * 12).toFixed(1) + "px");
+      }
+    });
+    view.addEventListener("pointerleave", function () {
+      if (panel) { panel.style.setProperty("--gx", "50%"); panel.style.setProperty("--gy", "50%"); }
+      if (bg) { bg.style.setProperty("--px", "0px"); bg.style.setProperty("--py", "0px"); }
+    });
+  });
+
+  /* 作品轮播 */
+  var projSlides = Array.prototype.slice.call(document.querySelectorAll("#projCarousel .proj"));
+  var projDots = Array.prototype.slice.call(document.querySelectorAll("#projCarousel .car-dot"));
+  var projNow = document.getElementById("projNow");
+  var projIndex = 0;
+
+  function showProject(i) {
+    if (!projSlides.length) return;
+    projIndex = (i + projSlides.length) % projSlides.length;
+    projSlides.forEach(function (s, idx) { s.classList.toggle("active", idx === projIndex); });
+    projDots.forEach(function (d, idx) { d.classList.toggle("active", idx === projIndex); });
+    if (projNow) projNow.textContent = ("0" + (projIndex + 1)).slice(-2);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("#projCarousel [data-dir]"), function (btn) {
+    btn.addEventListener("click", function () {
+      showProject(projIndex + parseInt(btn.getAttribute("data-dir"), 10));
+    });
+  });
+  projDots.forEach(function (dot) {
+    dot.addEventListener("click", function () {
+      showProject(parseInt(dot.getAttribute("data-go"), 10));
+    });
+  });
+
+  /* 深链：?proj=3 直接打开第 N 个项目 */
+  try {
+    var pq = parseInt(new URLSearchParams(window.location.search).get("proj"), 10);
+    if (pq >= 1 && pq <= projSlides.length) showProject(pq - 1);
+  } catch (e) { /* ignore */ }
+
+  /* 深链：?tab=sp-learn 直接打开某个标签 */
+  try {
+    var tq = new URLSearchParams(window.location.search).get("tab");
+    if (tq) {
+      var targetTab = document.querySelector('.tab[data-tab="' + tq + '"]');
+      if (targetTab && !targetTab.classList.contains("active")) targetTab.click();
+    }
+  } catch (e) { /* ignore */ }
+
+  panelEls.forEach(function (panel) { setIndicator(panel); fitPanel(panel); });
+  window.addEventListener("load", function () {
+    panelEls.forEach(function (panel) { setIndicator(panel); fitPanel(panel); });
+  });
+  window.addEventListener("resize", function () {
+    panelEls.forEach(function (panel) { setIndicator(panel); fitPanel(panel); });
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* 飘落物                                                              */
+  /* ------------------------------------------------------------------ */
+  function makeParticles(container, count, sizeRange) {
+    if (!container) return;
+    for (var i = 0; i < count; i++) {
+      var outer = document.createElement("span");
+      var inner = document.createElement("i");
+      outer.appendChild(inner);
+
+      outer.style.left = (Math.random() * 88 + 6).toFixed(2) + "%";
+      outer.style.animationDuration = (Math.random() * 26 + 42).toFixed(1) + "s";
+      outer.style.animationDelay = (-Math.random() * 60).toFixed(1) + "s";
+
+      var size = sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0]);
+      inner.style.width = size + "px";
+      inner.style.height = size + "px";
+      inner.style.opacity = (0.18 + Math.random() * 0.26).toFixed(2);
+      inner.style.animationDuration = (Math.random() * 6 + 8).toFixed(1) + "s";
+      inner.style.animationDelay = (-Math.random() * 10).toFixed(1) + "s";
+
+      container.appendChild(outer);
+    }
+  }
+  if (!reduceMotion) {
+    makeParticles(document.querySelector('[data-particles="spring"]'), 5, [9, 15]);
+    makeParticles(document.querySelector('[data-particles="autumn"]'), 4, [10, 16]);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 深链 ?season=                                                       */
+  /* ------------------------------------------------------------------ */
+  try {
+    var q = new URLSearchParams(window.location.search).get("season");
+    if (q === "spring" || q === "autumn") {
+      current = q;
+      root.setAttribute("data-season", q);
+      interacted = true;
+      window.clearTimeout(autoTimer);
+    }
+  } catch (e) { /* ignore */ }
+
+  /* 深链：?view=spring|autumn 直接打开内容页 */
+  try {
+    var vq = new URLSearchParams(window.location.search).get("view");
+    if (vq === "spring" || vq === "autumn") {
+      current = vq;
+      root.setAttribute("data-season", vq);
+      interacted = true;
+      window.clearTimeout(autoTimer);
+      showView(vq);
+      document.body.setAttribute("data-view", "content");
+      state = "content";
+      maybeGPA(vq);
+    }
+  } catch (e) { /* ignore */ }
+
+  updateChrome();
+
+  /* 首次进入若一直没动，自动演示一次换季；一旦下滑/点击即停止 */
+  if (!reduceMotion && !interacted) {
+    autoTimer = window.setTimeout(function () {
+      if (interacted || document.hidden) return;
+      nextSeason();
+    }, 11000);
+  }
+})();
+</script>
+</body>
+</html>
